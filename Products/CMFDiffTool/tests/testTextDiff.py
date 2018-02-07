@@ -25,6 +25,13 @@ class B:
         return 'method 過労死'
 
 
+class U:
+    attribute = u'ユニコードなら死にません'
+
+    def method(self):
+        return u'method 死にません'
+
+
 class TestTextDiff(TestCase):
     """Test the TextDiff class"""
     layer = PLONE_INTEGRATION_TESTING
@@ -39,11 +46,17 @@ class TestTextDiff(TestCase):
         a = A()
         fd = TextDiff(a, a, 'attribute')
         self.assertTrue(fd.same)
+        uu = U()
+        fd = TextDiff(uu, uu, 'attribute')
+        self.assertTrue(fd.same)
 
     def testMethodSame(self):
         """Test method with same value"""
         a = A()
         fd = TextDiff(a, a, 'method')
+        self.assertTrue(fd.same)
+        uu = U()
+        fd = TextDiff(uu, uu, 'method')
         self.assertTrue(fd.same)
 
     def testAttributeDiff(self):
@@ -52,6 +65,9 @@ class TestTextDiff(TestCase):
         b = B()
         fd = TextDiff(a, b, 'attribute')
         self.assertFalse(fd.same)
+        uu = U()
+        fd = TextDiff(a, uu, 'attribute')
+        self.assertFalse(fd.same)
 
     def testMethodDiff(self):
         """Test method with different value"""
@@ -59,11 +75,18 @@ class TestTextDiff(TestCase):
         b = B()
         fd = TextDiff(a, b, 'method')
         self.assertFalse(fd.same)
+        uu = U()
+        fd = TextDiff(a, uu, 'method')
+        self.assertFalse(fd.same)
 
     def testGetLineDiffsSame(self):
         """test getLineDiffs() method with same value"""
         a = A()
         fd = TextDiff(a, a, 'attribute')
+        expected = [('equal', 0, 1, 0, 1)]
+        self.assertEqual(fd.getLineDiffs(), expected)
+        uu = U()
+        fd = TextDiff(uu, uu, 'attribute')
         expected = [('equal', 0, 1, 0, 1)]
         self.assertEqual(fd.getLineDiffs(), expected)
 
@@ -74,12 +97,19 @@ class TestTextDiff(TestCase):
         fd = TextDiff(a, b, 'attribute')
         expected = [('replace', 0, 1, 0, 1)]
         self.assertEqual(fd.getLineDiffs(), expected)
+        uu = U()
+        fd = TextDiff(a, uu, 'attribute')
+        expected = [('replace', 0, 1, 0, 1)]
+        self.assertEqual(fd.getLineDiffs(), expected)
 
     def testSameText(self):
         """Test text diff output with same value"""
         a = A()
         fd = TextDiff(a, a, 'attribute')
         self.assertEqual(fd.ndiff(), '  कामसूत्र')
+        uu = U()
+        fd = TextDiff(uu, uu, 'attribute')
+        self.assertEqual(fd.ndiff(), u'  ユニコードなら死にません')
 
     def testDiffText(self):
         """Test text diff output with different value"""
@@ -87,6 +117,10 @@ class TestTextDiff(TestCase):
         b = B()
         expected = '- कामसूत्र%s+ 過労死' % linesep
         fd = TextDiff(a, b, 'attribute')
+        self.assertEqual(fd.ndiff(), expected)
+        uu = U()
+        expected = u'- कामसूत्र%s+ ユニコードなら死にません' % linesep
+        fd = TextDiff(a, uu, 'attribute')
         self.assertEqual(fd.ndiff(), expected)
 
     def testUnifiedDiff(self):
@@ -112,6 +146,27 @@ class TestTextDiff(TestCase):
 -कामसूत्र
 +過労死"""
         fd = TextDiff(a, b, 'attribute')
+        self.assertEqual(fd.unified_diff(), expected)
+        uu = U()
+        if sys.version_info[:2] >= (2, 7):
+            expected = u"""--- None
+
++++ None
+
+@@ -1 +1 @@
+
+-कामसूत्र
++ユニコードなら死にません"""
+        else:
+            expected = u"""--- None
+
++++ None
+
+@@ -1,1 +1,1 @@
+
+-कामसूत्र
++ユニコードなら死にません"""
+        fd = TextDiff(a, uu, 'attribute')
         self.assertEqual(fd.unified_diff(), expected)
 
     def testHTMLDiff(self):

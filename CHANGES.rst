@@ -15,6 +15,7 @@ New features:
 Bug fixes:
 
 - *add item here*
+- Support unicode field [terapyon]
 
 
 3.1.5 (2018-02-05)
